@@ -18,6 +18,7 @@ GEOIP_FILE = "working_dir/GeoIP.dat.gz"
 CITIZENLAB_TEST_LISTS_REPO_URL = "https://github.com/citizenlab/test-lists.git"
 CITIZENLAB_TEST_LISTS_REPO = "working_dir/test-lists/"
 CITIZENLAB_TEST_LISTS = "working_dir/test-lists/lists/*.csv"
+BRIDGE_REACHABILITY_LISTS = "bridge_reachability/*.csv"
 
 CWD = os.path.dirname(__file__)
 MANIFEST_FILE = "assets/manifest.json"
@@ -30,7 +31,8 @@ except Exception:
 
 RESOURCES = [
     {"maxmind-geoip": [GEOIP_ASN_FILE, GEOIP_FILE]},
-    {"citizenlab-test-lists": [CITIZENLAB_TEST_LISTS]}
+    {"citizenlab-test-lists": [CITIZENLAB_TEST_LISTS]},
+    {"tor-bridges": [BRIDGE_REACHABILITY_LISTS]}
 ]
 
 GH_BASE_URL = "https://api.github.com/repos/OpenObservatory/ooni-resources"
@@ -167,6 +169,8 @@ def _resolve_path(path):
         real_prepath = "working_dir/test-lists/lists/"
     elif prepath == "maxmind-geoip":
         real_prepath = "working_dir/"
+    elif prepath == "tor-bridges":
+        real_prepath = "bridge_reachability"
     else:
         raise Exception("Invalid prepath")
     return os.path.join(real_prepath, filename)
@@ -277,6 +281,8 @@ def copy_assets(resources):
 
 def update(args):
     print("Updating manifest")
+    if args.no_push:
+        print(" - will not push to remote")
     changed = False
     with open(MANIFEST_FILE) as f:
         manifest = json.load(f)
@@ -312,7 +318,8 @@ def update(args):
         manifest['version'] += 1
         write_manifest(manifest)
         copy_assets(manifest['resources'])
-        update_repo(manifest['version'])
+        if not args.no_push:
+            update_repo(manifest['version'])
     else:
         print("No update required")
 
@@ -323,6 +330,7 @@ def parse_args():
     subparsers = parser.add_subparsers()
 
     parser_update = subparsers.add_parser("update")
+    parser_update.add_argument('--no-push', action='store_true')
     parser_update.set_defaults(func=update)
 
     parser_initialize= subparsers.add_parser("initialize")
