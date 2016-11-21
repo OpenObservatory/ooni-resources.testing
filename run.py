@@ -9,6 +9,8 @@ from glob import glob
 import git
 import requests
 
+TESTING = True if os.getenv('OONI_RESOURCES_TESTING') else False
+
 GEOIP_ASN_URL = "https://download.maxmind.com/download/geoip/database/asnum/GeoIPASNum.dat.gz"
 GEOIP_ASN_FILE = "working_dir/GeoIPASNum.dat.gz"
 
@@ -36,6 +38,12 @@ RESOURCES = [
 ]
 
 GH_BASE_URL = "https://api.github.com/repos/OpenObservatory/ooni-resources"
+if TESTING:
+    GH_BASE_URL = "https://api.github.com/repos/OpenObservatory/ooni-resources.testing"
+
+REMOTE = "origin"
+if TESTING:
+    REMOTE = "testing"
 
 def _get_latest_release_tag():
     params = {
@@ -269,7 +277,7 @@ def update_repo(version):
     if repo.is_dirty():
         repo.git.commit("-a", m="Automatic update")
         print("Pushing changes to remote")
-        repo.git.push("-u","origin","master")
+        repo.git.push("-u", "origin", "master")
     print("Creating a new release with version {0}".format(version))
     create_new_release(str(version))
 
@@ -326,6 +334,8 @@ def update(args):
     return changed
 
 def parse_args():
+    if TESTING:
+        print("WE ARE IN TESTING")
     parser = argparse.ArgumentParser(description="Handle the workflow for updating ooni resources")
     subparsers = parser.add_subparsers()
 
